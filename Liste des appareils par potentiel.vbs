@@ -1,4 +1,4 @@
-' Liste l'ensemble des signaux du projet avec leurs appareils associés
+' List all the signals of the project with their associated devices
 
 ' v0: D.KOZIEL (SOGETI HT) 19/12/2011
 '				-> Création du script
@@ -21,8 +21,11 @@
 ' v8: D.KOZIEL (SOGETI HT) 19/06/2014
 '				-> Prise en compte des signaux presents sur les pins sans réseaux 
 
+' a0: A.LEFOSA (GIBELA) 05/12/2017
+'				-> Code translation French - English(RSA) 
+
 '----------------------------------------------------------------------------------------------------------
-' Définition des variables
+' Definition of variables
 '----------------------------------------------------------------------------------------------------------
 
 Option Explicit
@@ -58,7 +61,7 @@ Const nb_colonnes = 19
 ReDim Tab_Excel(150000,nb_colonnes)
 
 '----------------------------------------------------------------------------------------------------------
-' Création des objets
+' Creating of objects
 '----------------------------------------------------------------------------------------------------------
 Set E3s_Appareil = CreateObject("CT.Device")
 Set E3s_composant = CreateObject("CT.Component")
@@ -76,7 +79,7 @@ Set xl_Application = CreateObject("Excel.Application")
 Set dico = CreateObject("Scripting.Dictionary")
 
 '----------------------------------------------------------------------------------------------------------
-' Création de la connection
+' Establish the connection
 '----------------------------------------------------------------------------------------------------------
 
 If Not (Ouvrir_connexion()) Then
@@ -84,7 +87,7 @@ If Not (Ouvrir_connexion()) Then
 End If
 
 '----------------------------------------------------------------------------------------------------------
-' Extraction des signaux à partir de E3_séries
+' Extraction of signals from E3_series
 '----------------------------------------------------------------------------------------------------------
 nb_signaux = E3s_Projet.GetSignalIds(ID_signaux)
 E3s_Application.PutMessage "Lancement liste des potentiels"
@@ -118,7 +121,7 @@ For i=1 To nb_signaux
 					Tab_Excel(nline,2) = "-"
 				End If
 				
-				'On récupère l'arborescence dans laquelle est placée la feuille
+				' We recover the tree in which the sheet is placed
 				Arborescence = ""
 				Set E3s_Noeud = E3s_Projet.CreateStructureNodeObject
 				E3s_Symbole.SetId E3s_Pin.GetId
@@ -165,7 +168,7 @@ For i=1 To nb_signaux
 				End If
 				Tab_Excel(nline,9) = Mid(E3s_Appareil.GetName,2,100)
 				
-				'On récupère les attributs de pin
+				'We recover the attributes of pins
 				nb_text = E3s_Pin.GetTextIds (ID_Text)
 				If nb_text = 2 And E3s_Symbole.IsDynamic Then
 					For k=1 To nb_text
@@ -197,7 +200,7 @@ For i=1 To nb_signaux
 					Tab_Excel(nline,13) = "-"
 				End If
 				
-				'On récupère les noms d'entrée/sortie RIOM
+				'We get the RIOM input / output names
 				nb_text = E3s_Pin.GetTextIds (ID_Text)
 				erreur = 0
 				For k=1 To nb_text
@@ -217,7 +220,7 @@ For i=1 To nb_signaux
 					Tab_Excel(nline,14) = variables_RIOM
 				End If
 				Tab_Excel(nline, 15) = E3s_Feuille.GetAttributeValue("SheetName1")
-				' On récupère le calibre
+				' We recover the caliber
 				If E3s_composant.GetAttributeValue("CALIBRE")<>"" Then
 					Tab_Excel(nline,16) = E3s_composant.GetAttributeValue("CALIBRE")
 				Else
@@ -254,7 +257,7 @@ Mise_en_forme_Excel xl_Application
 E3s_Application.PutMessage "*** Terminé ***"
 
 '----------------------------------------------------------------------------------------------------------
-' Libération des objets
+' Release of objects
 '----------------------------------------------------------------------------------------------------------
 
 Set E3s_Application = Nothing
@@ -272,7 +275,7 @@ Set xl_Application = Nothing
 Set dico = Nothing
 
 '----------------------------------------------------------------------------------------------------------
-' Mise en forme fichier Excel
+' Excel file formatting
 '----------------------------------------------------------------------------------------------------------
 Sub Mise_en_forme_Excel(ByRef Excel)
 	With Excel
@@ -323,7 +326,7 @@ Sub Mise_en_forme_Excel(ByRef Excel)
 			.Weight = 3
 			.ColorIndex = xlAutomatic
 		End With
-		.Selection.Font.Size = 10							'taille de la police du texte
+		.Selection.Font.Size = 10							'font size of the text
 		.Selection.Font.Bold = True
 		.Selection.EntireColumn.Select
 		.Selection.HorizontalAlignment = xlCenter
@@ -337,41 +340,41 @@ Sub Mise_en_forme_Excel(ByRef Excel)
 End Sub
 
 '----------------------------------------------------------------------------------------------------------
-' Fonction d'ouverture de la connexion à E3s
+' Function to establish the connection with E3s
 '----------------------------------------------------------------------------------------------------------
-' Retourne True si la connexion est réussie, False si elle a échoué
-' NB : On peut éxécuter le script en Interne (lancé depuis E3S) ou en Externe (en cliquant sur le script depuis l'explorateur par exemple)
+' Returns True if the connection is successful, False if it failed
+' NB : We can run the script internally (launched from E3S) or externally (by clicking on the script from the explorer for example)
 '
 Function Ouvrir_connexion()
 	Dim shell,reponse,Tableau_projets(),disp, nb_projets, Chaine, objWMIService, colitems, objitem, lst,strComputer
-	If InStr(WScript.FullName, "E³") Then                                                           	' Cas Interne
+	If InStr(WScript.FullName, "E³") Then                                                           	' Internal case
 		Ouvrir_connexion = True	
 		Set E3s_Application = WScript
 		Set E3s_Projet = E3s_Application.CreateJobObject
 		E3s_Application.PutMessage "Project executé en interne"
 
-	Else                                                                                            	' Si éxécuté en externe
-		On Error Resume Next																			' ignorer l'erreur si dispatcher pas installé
+	Else                                                                                            	' If executed externally
+		On Error Resume Next																			' ignore error if dispatcher not installed
 		Set disp   = CreateObject("CT.Dispatcher")        												'
 		Set viewer = CreateObject("CT.DispatcherViewer")
 		On Error GoTo 0
 		Set E3s_Application = Nothing
-		If IsObject(disp) Then																			' On vérifie si le dispatcher est installé
+		If IsObject(disp) Then																			' We check if the dispatcher is installed
 			nb_projets = disp.GetE3Applications(lst)
-			' Si plus d'un projet ouvert, On propose à l'utilisateur de choisir celui qu'il veut ouvrir
+			' If more than one project is open, the user is asked to choose the one he wants to open
 			If nb_projets > 1 then
-				If viewer.ShowViewer(e3Obj) = True Then													' Afficher la liste des projets chargés
-					Set E3s_Application = e3Obj															' Prendre le séléctionnné
-					Set E3s_Projet = E3s_Application.CreateJobObject									' le projet correspondant
+				If viewer.ShowViewer(e3Obj) = True Then													' View the list of loaded projects
+					Set E3s_Application = e3Obj															' Take the selected
+					Set E3s_Projet = E3s_Application.CreateJobObject									' the corresponding project
 					Ouvrir_connexion = true
 				Else
 					Ouvrir_connexion = False   
 				End If
-			ElseIf nb_projets = 1 Then																		' Si pas le choix, on ouvre le premier projet
+			ElseIf nb_projets = 1 Then																		' If not the choice, we open the first project
 				Set E3s_Application = CreateObject("CT.Application")
 				Set E3s_Projet = E3s_Application.CreateJobObject
 				Ouvrir_connexion = true
-			Else																							' Sinon si pas de projets d'ouvert, on quitte
+			Else																							' Otherwise if no projects open, we leave
 				MsgBox ("Aucun projet n'est ouvert")
 				Ouvrir_connexion = False   
 			End If
